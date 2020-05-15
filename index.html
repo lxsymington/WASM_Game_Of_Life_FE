@@ -1,11 +1,75 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Hello wasm-pack!</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        align-items: center;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+      }
+
+      .graph {
+        margin: 1em;
+        max-width: 840px;
+        position: relative;
+        width: 100%;
+        contain: style;
+      }
+
+      .graph:before {
+        content: "";
+        display: block;
+        width: 100%;
+        padding: 0 0 100%;
+      }
+
+      .controls {
+        align-items: stretch;
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+      }
+
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      pre {
+        text-align: right;
+      }
+
+      pre:first-line {
+        text-align: left;
+        font-weight: bolder;
+      }
+    </style>
   </head>
   <body>
-    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <noscript
+      >This page contains webassembly and javascript content, please enable
+      javascript in your browser.</noscript
+    >
+    <section class="graph">
+      <canvas id="game-of-life-canvas"></canvas>
+    </section>
+    <section class="controls">
+      <input type="range" id="speed" min="1" max="9" value="1" />
+      <button id="play-pause"></button>
+      <button id="random-reset">Reset</button>
+      <pre id="fps"></pre>
+    </section>
     <script src="./bootstrap.js"></script>
   </body>
 </html>
