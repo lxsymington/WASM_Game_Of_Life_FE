@@ -15,27 +15,24 @@ if (!gl) {
   alert("Your browser does not support WebGL 2 please try another!");
 }
 
+const pixelDensity = window.devicePixelRatio || 1;
+
 // Resize our canvas
 resize(canvas);
 
 // Map the WebGL viewport to the canvas size
 gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-const pixelDensity = window.devicePixelRatio || 1;
-
-const GRID_SIZE = 512;
-const CELL_GAP = 1; // px
-const CELL_SIZE = (gl.canvas.width - CELL_GAP * GRID_SIZE) / GRID_SIZE; // px
-const GRID_COLOUR = "#CCCCCC";
-const DEAD_COLOUR = "#FFFFFF";
-const ALIVE_COLOUR = "#000000";
+let dimensions = graphDimensions();
+console.log(dimensions);
 
 // Construct the universe and get its width and height.
 const universe = Universe.new(
-  GRID_SIZE,
-  GRID_SIZE,
-  CELL_SIZE * pixelDensity,
-  CELL_GAP
+  dimensions.width,
+  dimensions.height,
+  dimensions.cellWidth,
+  dimensions.cellHeight,
+  dimensions.gap
 );
 const width = universe.width();
 const height = universe.height();
@@ -70,9 +67,7 @@ randomResetButton.addEventListener("click", randomReset);
 function renderLoop() {
   fps.render();
 
-  for (let i = 0; i < speed.value; i++) {
-    universe.tick();
-  }
+  universe.tick(speed.value);
 
   drawGrid();
   drawCells();
@@ -149,6 +144,8 @@ function drawCells() {
     cellCoordsCount
   );
 
+  console.log(cellCoords);
+
   // Create a buffer for the data to be passed to the input attribute
   const positionBuffer = gl.createBuffer();
 
@@ -196,7 +193,6 @@ function drawCells() {
 }
 
 function toggleCell(event) {
-  const cssToRealPixels = window.devicePixelRatio || 1;
   const boundingRect = canvas.getBoundingClientRect();
 
   const scaleX = canvas.width / boundingRect.width;
@@ -206,11 +202,11 @@ function toggleCell(event) {
   const canvasTop = (event.clientY - boundingRect.top) * scaleY;
 
   const row = Math.min(
-    Math.floor(canvasTop / (CELL_SIZE + CELL_GAP)),
+    Math.floor(canvasTop / (dimensions.size + dimensions.gap)),
     height - 1
   );
   const col = Math.min(
-    Math.floor(canvasLeft / (CELL_SIZE + CELL_GAP)),
+    Math.floor(canvasLeft / (dimensions.size + dimensions.gap)),
     width - 1
   );
 
@@ -271,13 +267,11 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 function resize(canvas) {
-  const cssToRealPixels = window.devicePixelRatio || 1;
-
   // Lookup the size the browser is displaying the canvas in CSS pixels
   // and compute a size needed to make our drawingbuffer match it in
   // device pixels.
-  const displayWidth = Math.floor(canvas.clientWidth * cssToRealPixels);
-  const displayHeight = Math.floor(canvas.clientHeight * cssToRealPixels);
+  const displayWidth = Math.floor(canvas.clientWidth * pixelDensity);
+  const displayHeight = Math.floor(canvas.clientHeight * pixelDensity);
   // Check if the canvas is not the same size.
   if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
     // Make the canvas the same size
@@ -303,4 +297,35 @@ function createProgramFromSources(
 
   // Link the shaders and createProgram
   return createProgram(gl, vertexShader, fragmentShader);
+}
+
+function graphDimensions(dimensions) {
+  const gap = 1;
+  let scale = 2;
+  let windowWidth = window.innerWidth;
+  let windowHeight = window.innerHeight;
+
+  while (
+    (Math.max(windowWidth, windowHeight) - gap) / (scale * pixelDensity + gap) >
+    640
+  ) {
+    scale++;
+  }
+
+  const height = Math.floor(windowHeight / (scale * pixelDensity + gap));
+  const width = Math.floor(windowWidth / (scale * pixelDensity + gap));
+
+  const cellHeight = (windowHeight - (height + 1) * gap) / height;
+  const cellWidth = (windowWidth - (width + 1) * gap) / width;
+
+  alert(`scale: ${scale}, cellWidth: ${cellWidth}, cellHeight: ${cellHeight}`);
+
+  return {
+    cellHeight,
+    cellWidth,
+    gap,
+    height,
+    pixelDensity: window.devicePixelRatio || 1,
+    width,
+  };
 }

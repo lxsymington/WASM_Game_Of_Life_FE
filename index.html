@@ -10,32 +10,37 @@
       }
 
       body {
-        align-items: center;
-        display: flex;
-        flex-flow: row nowrap;
-        justify-content: center;
+        display: grid;
+        font-family: monospace;
+        grid-template:
+          ". . ." 1fr
+          ". controls ." auto
+          ". . ." 12px
+          / 1fr auto 12px;
+        margin: 0;
       }
 
       .graph {
-        margin: 1em;
-        max-width: 840px;
+        contain: style;
+        grid-column: 1 / span 3;
+        grid-row: 1 / span 3;
         position: relative;
         width: 100%;
-        contain: style;
-      }
-
-      .graph:before {
-        content: "";
-        display: block;
-        width: 100%;
-        padding: 0 0 100%;
+        z-index: 0;
       }
 
       .controls {
-        align-items: stretch;
+        background-color: rgba(255, 255, 255, 0.75);
+        grid-area: controls;
+        padding: 12px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .controls__speed {
         display: flex;
         flex-flow: column nowrap;
-        justify-content: center;
+        align-items: start;
       }
 
       canvas {
@@ -48,6 +53,7 @@
 
       pre {
         text-align: right;
+        margin: 0;
       }
 
       pre:first-line {
@@ -61,15 +67,24 @@
       >This page contains webassembly and javascript content, please enable
       javascript in your browser.</noscript
     >
-    <section class="graph">
+    <article class="graph">
       <canvas id="game-of-life-canvas"></canvas>
-    </section>
-    <section class="controls">
-      <input type="range" id="speed" min="1" max="9" value="1" />
+    </article>
+    <article class="controls">
+      <label class="controls__speed">
+        <span>Cycles per frame</span>
+        <input type="range" id="speed" min="1" max="9" value="1" />
+      </label>
       <button id="play-pause"></button>
       <button id="random-reset">Reset</button>
-      <pre id="fps"></pre>
-    </section>
+      <section class="fps">
+        <span class="fps__heading">Frames per second:</span>
+        <pre>latest = <span id="latest"></span></pre>
+        <pre>avg of last 100 = <span id="mean"></span></pre>
+        <pre>min of last 100 = <span id="min"></span></pre>
+        <pre>max of last 100 = <span id="max"></span></pre>
+      </section>
+    </article>
     <script src="./bootstrap.js"></script>
   </body>
 </html>

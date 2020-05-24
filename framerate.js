@@ -1,6 +1,9 @@
 class FrameRate {
   constructor() {
-    this.fps = document.getElementById("fps");
+    this.latest = document.getElementById("latest");
+    this.mean = document.getElementById("mean");
+    this.min = document.getElementById("min");
+    this.max = document.getElementById("max");
     this.frames = [];
     this.lastFrameTimeStamp = performance.now();
   }
@@ -32,12 +35,10 @@ class FrameRate {
     let mean = sum / this.frames.length;
 
     // Render the statistics.
-    this.fps.innerText = `Frames per second:
-        latest = ${Math.round(fps)}
-        avg of last 100 = ${Math.round(mean)}
-        min of last 100 = ${Math.round(min)}
-        max of last 100 = ${Math.round(max)}
-    `;
+    this.latest.innerText = Math.round(fps);
+    this.mean.innerText = Math.round(mean);
+    this.min.innerText = Math.round(min);
+    this.max.innerText = Math.round(max);
   }
 }
 
