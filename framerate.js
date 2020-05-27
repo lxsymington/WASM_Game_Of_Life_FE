@@ -35,10 +35,16 @@ class FrameRate {
     let mean = sum / this.frames.length;
 
     // Render the statistics.
-    this.latest.innerText = Math.round(fps);
-    this.mean.innerText = Math.round(mean);
-    this.min.innerText = Math.round(min);
-    this.max.innerText = Math.round(max);
+    this.latest.textContent = Math.round(fps);
+    this.mean.textContent = Math.round(mean);
+    this.min.textContent = Math.round(min);
+    this.max.textContent = Math.round(max);
+
+    return [mean, this.frames.length];
+  }
+
+  reset() {
+    this.frames = [];
   }
 }
 

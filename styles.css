@@ -1,0 +1,114 @@
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: rgb(50, 50, 50);
+  display: grid;
+  font-family: monospace;
+  grid-template:
+    ". . ." 12px
+    ". centre ." 1fr
+    ". . ." 12px
+    / 12px 1fr 12px;
+  margin: 0;
+}
+
+.graph {
+  contain: style;
+  grid-column: 1 / span 3;
+  grid-row: 1 / span 3;
+  position: relative;
+  width: 100%;
+  z-index: 0;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.controls,
+.modal {
+  border: 1px solid currentColor;
+  padding: 12px;
+  position: relative;
+}
+
+.controls {
+  align-items: stretch;
+  backdrop-filter: blur(2px);
+  background-color: rgba(255, 255, 255, 0.75);
+  place-self: end;
+  display: flex;
+  flex-flow: row wrap;
+  gap: 12px;
+  grid-area: centre;
+  max-width: 200px;
+  z-index: 1;
+}
+
+.controls__size,
+.controls__speed {
+  align-items: start;
+  display: flex;
+  flex: 1 0 100%;
+  flex-flow: column nowrap;
+  margin: 0 0 12px;
+}
+
+.controls__button {
+  flex: 1 0 0;
+  margin: 0 0 12px;
+}
+
+.fps {
+  flex: 1 0 100%;
+  margin: 0;
+  text-align: right;
+}
+
+.fps__heading {
+  display: block;
+  font-weight: bolder;
+  text-align: left;
+}
+
+.fps pre {
+  margin: 0;
+}
+
+.modal {
+  background-color: rgb(255, 255, 255);
+  grid-area: centre;
+  max-width: 240px;
+  place-self: center;
+  z-index: 2;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s step-start;
+}
+
+.modal--dismissed {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s step-end;
+}
+
+.modal__header {
+  font-size: larger;
+  font-weight: bolder;
+  text-decoration-line: underline;
+  text-decoration-color: rgb(138, 151, 212);
+}
+
+.modal kbd {
+  background-color: rgba(50, 50, 50, 0.15);
+  border: 1px solid rgb(50, 50, 50);
+  border-radius: 2px;
+  padding: 0 0.5ch;
+  box-decoration-break: clone;
+}

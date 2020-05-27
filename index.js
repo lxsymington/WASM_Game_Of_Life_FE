@@ -9,13 +9,21 @@ import {
 import FrameRate from "./framerate";
 
 const canvas = document.getElementById("game-of-life-canvas");
+const speedRange = document.getElementById("speed");
+const sizeRange = document.getElementById("size");
+const playPauseButton = document.getElementById("play-pause");
+const randomResetButton = document.getElementById("random-reset");
+const infoButton = document.getElementById("info");
+const infoCloseButton = document.getElementById("info-close");
+const infoModal = document.getElementById("info-modal");
+
 const gl = canvas.getContext("webgl2");
 
 if (!gl) {
   alert("Your browser does not support WebGL 2 please try another!");
 }
 
-const pixelDensity = window.devicePixelRatio || 1;
+let initialDimensions = graphDimensions();
 
 // Resize our canvas
 resize(canvas);
@@ -23,23 +31,13 @@ resize(canvas);
 // Map the WebGL viewport to the canvas size
 gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-let dimensions = graphDimensions();
-console.log(dimensions);
-
 // Construct the universe and get its width and height.
 const universe = Universe.new(
-  dimensions.width,
-  dimensions.height,
-  dimensions.cellWidth,
-  dimensions.cellHeight,
-  dimensions.gap
+  initialDimensions.width,
+  initialDimensions.height,
+  initialDimensions.cellSize,
+  initialDimensions.gap
 );
-const width = universe.width();
-const height = universe.height();
-
-const speedRange = document.getElementById("speed");
-const playPauseButton = document.getElementById("play-pause");
-const randomResetButton = document.getElementById("random-reset");
 
 let animationId = null;
 const lineProgram = createProgramFromSources(
@@ -63,9 +61,37 @@ togglePlayState();
 canvas.addEventListener("click", toggleCell);
 playPauseButton.addEventListener("click", togglePlayState);
 randomResetButton.addEventListener("click", randomReset);
+window.addEventListener("resize", resizeUniverse);
+sizeRange.addEventListener("input", resizeUniverse);
+infoButton.addEventListener("click", toggleModal);
+infoCloseButton.addEventListener("click", toggleModal);
 
 function renderLoop() {
-  fps.render();
+  const [meanFramerate, samplesize] = fps.render();
+
+  if (meanFramerate < 24 && samplesize >= 100) {
+    if (speed.value > speed.min) {
+      fps.reset();
+      speed.stepDown();
+      alert(
+        "The page's performance appears to have been poor on your hardware. Therefore the game has been paused and the cycles per frame has been stepped down."
+      );
+      togglePlayState();
+      return;
+    }
+
+    if (sizeRange.value > sizeRange.min) {
+      fps.reset();
+      sizeRange.stepDown();
+      alert(
+        "The page's performance appears to have been poor on your hardware. Therefore the game has been paused and the max cell count has been stepped down."
+      );
+      togglePlayState();
+      return;
+    }
+
+    return;
+  }
 
   universe.tick(speed.value);
 
@@ -144,7 +170,7 @@ function drawCells() {
     cellCoordsCount
   );
 
-  console.log(cellCoords);
+  // console.log(cellCoords);
 
   // Create a buffer for the data to be passed to the input attribute
   const positionBuffer = gl.createBuffer();
@@ -193,6 +219,7 @@ function drawCells() {
 }
 
 function toggleCell(event) {
+  const { cellSize, gap, height, pixelDensity, width } = graphDimensions();
   const boundingRect = canvas.getBoundingClientRect();
 
   const scaleX = canvas.width / boundingRect.width;
@@ -202,12 +229,19 @@ function toggleCell(event) {
   const canvasTop = (event.clientY - boundingRect.top) * scaleY;
 
   const row = Math.min(
-    Math.floor(canvasTop / (dimensions.size + dimensions.gap)),
+    Math.floor(canvasTop / ((cellSize + gap) * pixelDensity)),
     height - 1
   );
   const col = Math.min(
-    Math.floor(canvasLeft / (dimensions.size + dimensions.gap)),
+    Math.floor(canvasLeft / ((cellSize + gap) * pixelDensity)),
     width - 1
+  );
+
+  console.log(
+    { cellSize, gap, pixelDensity, height, width },
+    `Row: ${row}, Column: ${col}`,
+    universe.width(),
+    universe.height()
   );
 
   if (event.ctrlKey) {
@@ -267,11 +301,14 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 function resize(canvas) {
+  let dimensions = graphDimensions();
   // Lookup the size the browser is displaying the canvas in CSS pixels
   // and compute a size needed to make our drawingbuffer match it in
   // device pixels.
-  const displayWidth = Math.floor(canvas.clientWidth * pixelDensity);
-  const displayHeight = Math.floor(canvas.clientHeight * pixelDensity);
+  const displayWidth = Math.floor(canvas.clientWidth * dimensions.pixelDensity);
+  const displayHeight = Math.floor(
+    canvas.clientHeight * dimensions.pixelDensity
+  );
   // Check if the canvas is not the same size.
   if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
     // Make the canvas the same size
@@ -299,33 +336,44 @@ function createProgramFromSources(
   return createProgram(gl, vertexShader, fragmentShader);
 }
 
-function graphDimensions(dimensions) {
+function graphDimensions() {
+  const pixelDensity = window.devicePixelRatio || 1;
   const gap = 1;
-  let scale = 2;
-  let windowWidth = window.innerWidth;
-  let windowHeight = window.innerHeight;
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+  let scale = 1 / pixelDensity;
 
   while (
     (Math.max(windowWidth, windowHeight) - gap) / (scale * pixelDensity + gap) >
-    640
+    sizeRange.value
   ) {
     scale++;
   }
 
+  const cellSize = scale * pixelDensity;
   const height = Math.floor(windowHeight / (scale * pixelDensity + gap));
   const width = Math.floor(windowWidth / (scale * pixelDensity + gap));
 
-  const cellHeight = (windowHeight - (height + 1) * gap) / height;
-  const cellWidth = (windowWidth - (width + 1) * gap) / width;
-
-  alert(`scale: ${scale}, cellWidth: ${cellWidth}, cellHeight: ${cellHeight}`);
-
   return {
-    cellHeight,
-    cellWidth,
+    cellSize,
     gap,
     height,
     pixelDensity: window.devicePixelRatio || 1,
     width,
   };
+}
+
+function resizeUniverse(event) {
+  togglePlayState();
+  let { cellSize, gap, height, width } = graphDimensions();
+  universe.resize(width, height, cellSize, gap);
+  resize(canvas);
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  drawGrid();
+  drawCells();
+  togglePlayState();
+}
+
+function toggleModal(event) {
+  infoModal.classList.toggle("modal--dismissed");
 }
