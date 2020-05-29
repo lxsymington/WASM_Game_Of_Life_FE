@@ -58,6 +58,7 @@ drawCells();
 
 togglePlayState();
 
+document.addEventListener("visibilitychange", manageHidden);
 canvas.addEventListener("click", toggleCell);
 playPauseButton.addEventListener("click", togglePlayState);
 randomResetButton.addEventListener("click", randomReset);
@@ -67,33 +68,17 @@ infoButton.addEventListener("click", toggleModal);
 infoCloseButton.addEventListener("click", toggleModal);
 
 function renderLoop() {
-  const [meanFramerate, samplesize] = fps.render();
+  const [framerate, sampleSize] = fps.render();
 
-  if (meanFramerate < 24 && samplesize >= 100) {
-    if (speed.value > speed.min) {
-      fps.reset();
-      speed.stepDown();
-      alert(
-        "The page's performance appears to have been poor on your hardware. Therefore the game has been paused and the cycles per frame has been stepped down."
-      );
-      togglePlayState();
-      return;
-    }
-
-    if (sizeRange.value > sizeRange.min) {
-      fps.reset();
-      sizeRange.stepDown();
-      alert(
-        "The page's performance appears to have been poor on your hardware. Therefore the game has been paused and the max cell count has been stepped down."
-      );
-      togglePlayState();
-      return;
-    }
-
-    return;
+  if (
+    (framerate < 6 && sampleSize >= 10) ||
+    (framerate < 12 && sampleSize >= 20) ||
+    (framerate < 24 && sampleSize >= 100)
+  ) {
+    return managePerformance(framerate, sampleSize);
   }
 
-  universe.tick(speed.value);
+  universe.tick(speedRange.value);
 
   drawGrid();
   drawCells();
@@ -376,4 +361,42 @@ function resizeUniverse(event) {
 
 function toggleModal(event) {
   infoModal.classList.toggle("modal--dismissed");
+}
+
+function managePerformance(framerate, sampleSize) {
+  if (parseInt(speedRange.value, 10) > parseInt(speedRange.min, 10)) {
+    fps.reset();
+    speedRange.stepDown();
+    resizeUniverse();
+    alert(
+      "The page's performance appears to have been poor on your hardware. Therefore the game has been paused and the cycles per frame has been stepped down."
+    );
+    return;
+  }
+
+  if (parseInt(sizeRange.value, 10) > parseInt(sizeRange.min, 10)) {
+    const { cellSize: currentCellSize } = graphDimensions();
+    fps.reset();
+    do {
+      sizeRange.stepDown();
+    } while (graphDimensions().cellSize === currentCellSize);
+    resizeUniverse();
+    alert(
+      "The page's performance appears to have been poor on your hardware. Therefore the game has been paused and the max cell count has been stepped down."
+    );
+    return;
+  }
+
+  return;
+}
+
+function manageHidden(event) {
+  if (document.hidden) {
+    playPauseButton.textContent = "▶";
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  } else {
+    playPauseButton.textContent = "⏸";
+    renderLoop();
+  }
 }
